@@ -24,10 +24,17 @@
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
         state: present
 
-    - name: Install Docker Engine
+    - name: Install Docker Engine and related packages
       apt:
-        name: docker-ce
-        state: present
+        name:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+      state: present
+      update_cache: yes
+
 
     - name: Start and enable Docker service
       service:

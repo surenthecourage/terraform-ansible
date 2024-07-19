@@ -1,0 +1,6 @@
+.terraform.lock.hcl
+.terraform/
+.terraformignore
+.vscode/
+terraform.tfstate
+terraform.tfstate.backup

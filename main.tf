@@ -116,7 +116,4 @@ resource "null_resource" "run_inventory_script" {
     command = "python3 dynamic_inventory.py"
   }
   depends_on = [ aws_instance.project_instance ]
-  triggers = {
-    always_run = "${timestamp()}"
-  }
 }
