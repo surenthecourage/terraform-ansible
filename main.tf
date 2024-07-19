@@ -110,3 +110,13 @@ resource "aws_instance" "project_instance" {
     "Name" = "ec2-instance-${count.index + 1}"
   }
 }
+
+resource "null_resource" "run_inventory_script" {
+  provisioner "local-exec" {
+    command = "python3 dynamic_inventory.py"
+  }
+  depends_on = [ aws_instance.project_instance ]
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+}
