@@ -1,27 +1,27 @@
 resource "aws_vpc" "project_vpc" {
-  cidr_block           = "10.10.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
 
   tags = {
-    Name = "project-vpc"
+    Name = "${var.project_name}-vpc"
   }
 }
 
 resource "aws_subnet" "project_subnet" {
   vpc_id     = aws_vpc.project_vpc.id
-  cidr_block = "10.10.1.0/24"
+  cidr_block = var.subnet_cidr
 
   tags = {
-    "Name" = "project-subnet"
+    "Name" = "${var.project_name}-subnet"
   }
 }
 
 resource "aws_internet_gateway" "project-igw" {
   vpc_id = aws_vpc.project_vpc.id
-  
+
   tags = {
-    "Name" = "project-igw"
+    "Name" = "${var.project_name}-igw"
   }
 }
 
@@ -29,7 +29,7 @@ resource "aws_route_table" "project-rt" {
   vpc_id = aws_vpc.project_vpc.id
 
   tags = {
-    "Name" = "project-rt"
+    "Name" = "${var.project_name}-rt"
   }
 }
 
@@ -77,13 +77,13 @@ resource "aws_security_group" "project-main-sg" {
   }
 
   tags = {
-    "Name" = "project-security-group"
+    "Name" = "${var.project_name}-security-group"
   }
 }
 
 resource "aws_key_pair" "project_ssh_key" {
   key_name   = "ssh_key"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file(var.public_key_path)
 
   tags = {
     "Name" = "ssh-key"
@@ -91,10 +91,11 @@ resource "aws_key_pair" "project_ssh_key" {
 }
 
 resource "aws_instance" "project_instance" {
-  instance_type = "t2.medium"
-  ami           = "ami-04a81a99f5ec58529"
+
+  for_each      = var.instances
+  instance_type = each.value["instance_type"]
+  ami           = each.value["ami_id"]
   key_name      = aws_key_pair.project_ssh_key.key_name
-  count = 2
 
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.project-main-sg.id]
@@ -105,15 +106,13 @@ resource "aws_instance" "project_instance" {
     volume_size = 30
     volume_type = "gp3"
   }
-  
-  tags = {
-    "Name" = "ec2-instance-${count.index + 1}"
-  }
+
+  tags = each.value["tags"]
 }
 
 resource "null_resource" "run_inventory_script" {
   provisioner "local-exec" {
     command = "python3 dynamic_inventory.py"
   }
-  depends_on = [ aws_instance.project_instance ]
+  depends_on = [aws_instance.project_instance]
 }
