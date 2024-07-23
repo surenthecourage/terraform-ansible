@@ -41,7 +41,7 @@ resource "aws_internet_gateway" "project_igw" {
 
 #NAT gateway
 resource "aws_nat_gateway" "project_nat" {
-  allocation_id = aws_eip.project_eip.id
+  allocation_id = aws_eip.nat_gw_eip.id
   subnet_id     = aws_subnet.public_subnet.id
 
   tags = {
@@ -50,7 +50,7 @@ resource "aws_nat_gateway" "project_nat" {
 }
 
 # Public IP for Nat Gateway
-resource "aws_eip" "project_eip" {
+resource "aws_eip" "nat_gw_eip" {
   tags = {
     Name = "${var.project_name}-eip"
   }
@@ -102,7 +102,7 @@ resource "aws_route_table_association" "private_rta" {
 
 # Security Groups for private subnet instances
 resource "aws_security_group" "project_main_sg" {
-  name   = "HTTP and SSH rule"
+  name   = "Security Groups for private subnet instances"
   vpc_id = aws_vpc.project_vpc.id
 
   ingress {
