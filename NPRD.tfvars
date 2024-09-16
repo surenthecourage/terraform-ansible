@@ -20,4 +20,4 @@ instances = {
 vpc_cidr    = "10.10.0.0/16"
 public_subnet_cidr = "10.10.1.0/24"
 private_subnet_cidr = "10.10.2.0/24"
-public_key_path = "~/.ssh/id_rsa.pub"
+public_key_path = "/home/surendra/.ssh/id_rsa.pub"

@@ -20,15 +20,15 @@ resource "aws_subnet" "public_subnet" {
   }
 }
 
-#Private Subnet
-resource "aws_subnet" "private_subnet" {
-  vpc_id     = aws_vpc.project_vpc.id
-  cidr_block = var.private_subnet_cidr
+# #Private Subnet
+# resource "aws_subnet" "private_subnet" {
+#   vpc_id     = aws_vpc.project_vpc.id
+#   cidr_block = var.private_subnet_cidr
 
-  tags = {
-    Name = "${var.project_name}-private-subnet"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-private-subnet"
+#   }
+# }
 
 #Internet Gateway
 resource "aws_internet_gateway" "project_igw" {
@@ -39,22 +39,22 @@ resource "aws_internet_gateway" "project_igw" {
   }
 }
 
-#NAT gateway
-resource "aws_nat_gateway" "project_nat" {
-  allocation_id = aws_eip.nat_gw_eip.id
-  subnet_id     = aws_subnet.public_subnet.id
+# #NAT gateway
+# resource "aws_nat_gateway" "project_nat" {
+#   allocation_id = aws_eip.nat_gw_eip.id
+#   subnet_id     = aws_subnet.public_subnet.id
 
-  tags = {
-    Name = "${var.project_name}-nat"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-nat"
+#   }
+# }
 
 # Public IP for Nat Gateway
-resource "aws_eip" "nat_gw_eip" {
-  tags = {
-    Name = "${var.project_name}-eip"
-  }
-}
+# resource "aws_eip" "nat_gw_eip" {
+#   tags = {
+#     Name = "${var.project_name}-eip"
+#   }
+# }
 
 # Route table - Public
 resource "aws_route_table" "public_route_table" {
@@ -79,26 +79,26 @@ resource "aws_route_table_association" "public_rta" {
 }
 
 # Route table - Private
-resource "aws_route_table" "private_route_table" {
-  vpc_id = aws_vpc.project_vpc.id
+# resource "aws_route_table" "private_route_table" {
+#   vpc_id = aws_vpc.project_vpc.id
 
-  tags = {
-    Name = "${var.project_name}-private-rt"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-private-rt"
+#   }
+# }
 
 # Private Route
-resource "aws_route" "private_route" {
-  route_table_id         = aws_route_table.private_route_table.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.project_nat.id
-}
+# resource "aws_route" "private_route" {
+#   route_table_id         = aws_route_table.private_route_table.id
+#   destination_cidr_block = "0.0.0.0/0"
+#   nat_gateway_id         = aws_nat_gateway.project_nat.id
+# }
 
 # Private Route table association
-resource "aws_route_table_association" "private_rta" {
-  route_table_id = aws_route_table.private_route_table.id
-  subnet_id      = aws_subnet.private_subnet.id
-}
+# resource "aws_route_table_association" "private_rta" {
+#   route_table_id = aws_route_table.private_route_table.id
+#   subnet_id      = aws_subnet.private_subnet.id
+# }
 
 # Security Groups for private subnet instances
 resource "aws_security_group" "project_main_sg" {
@@ -116,7 +116,7 @@ resource "aws_security_group" "project_main_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -141,16 +141,16 @@ resource "aws_key_pair" "project_ssh_key" {
   }
 }
 
-# EC2 instances located in private subnet
+# EC2 instances located in public subnet
 resource "aws_instance" "project_instance" {
   for_each      = var.instances
   instance_type = each.value["instance_type"]
   ami           = each.value["ami_id"]
   key_name      = aws_key_pair.project_ssh_key.key_name
 
-  associate_public_ip_address = false
+  # associate_public_ip_address = false
   vpc_security_group_ids      = [aws_security_group.project_main_sg.id]
-  subnet_id                   = aws_subnet.private_subnet.id
+  subnet_id                   = aws_subnet.public_subnet.id
 
   root_block_device {
     volume_size = 30
@@ -163,7 +163,7 @@ resource "aws_instance" "project_instance" {
 # python script execution to run inventory script
 resource "null_resource" "run_inventory_script" {
   provisioner "local-exec" {
-    command = "python3 dynamic_inventory.py"
+    command = "python3 dynamic_inventory.py --output-file my_inventory.yaml"
   }
   depends_on = [aws_instance.project_instance]
 }

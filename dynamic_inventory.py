@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 
 import boto3
 import yaml  # For YAML output
@@ -28,15 +28,12 @@ def get_instance_tag(instance, key):
 def generate_inventory(instances):
     inventory = {
         'all': {
-            'hosts': [],
-            'vars': {}
-        },
-        '_meta': {
-            'hostvars': {}
+            'hosts': {},
+            'vars': {},
+            'children': {}
         }
     }
 
-    # Dictionary to hold hosts grouped by Env tag (e.g., dev, prod)
     env_groups = {}
 
     for instance in instances:
@@ -44,31 +41,25 @@ def generate_inventory(instances):
         public_ip = instance.get('PublicIpAddress')
         private_ip = instance.get('PrivateIpAddress')
 
-        # Get the Name tag or fall back to instance_id if not available
         name_tag = get_instance_tag(instance, 'Name') or instance_id
-
-        # Get the Env tag to group instances
         env_tag = get_instance_tag(instance, 'Env') or 'unknown'
 
-        # Add the instance to the inventory under 'all' and under the specific env group
-        inventory['all']['hosts'].append(name_tag)
-        
-        # Grouping instances by Env tag
-        if env_tag not in env_groups:
-            env_groups[env_tag] = {'hosts': []}
-        env_groups[env_tag]['hosts'].append(name_tag)
-
-        # Add hostvars for this instance
-        inventory['_meta']['hostvars'][name_tag] = {
+        # Add the host to the inventory
+        inventory['all']['hosts'][name_tag] = {
             'ansible_host': public_ip or private_ip,
-            'private_ip': private_ip,
-            'public_ip': public_ip,
             'ansible_user': 'ubuntu',
-            'ansible_ssh_private_key_file': "~/.ssh/id_rsa"
+            'ansible_ssh_private_key_file': "/home/surendra/.ssh/id_rsa",
+            'private_ip': private_ip,
+            'public_ip': public_ip
         }
 
-    # Add the env groups to the inventory
-    inventory.update(env_groups)
+        # Add the host to its environment group
+        if env_tag not in env_groups:
+            env_groups[env_tag] = {'hosts': {}}
+        env_groups[env_tag]['hosts'][name_tag] = {}
+
+    # Update the 'children' section of 'all'
+    inventory['all']['children'].update(env_groups)
 
     return inventory
 
@@ -91,7 +82,7 @@ def main():
         # Only print the inventory in YAML format (do not write to a file)
         print(yaml.dump(inventory, default_flow_style=False))
     elif args.host:
-        hostvars = inventory['_meta']['hostvars'].get(args.host, {})
+        hostvars = inventory['all']['hosts'].get(args.host, {})
         print(yaml.dump(hostvars, default_flow_style=False))
     elif args.output_file:
         # Only write to a file if --output-file is explicitly provided
