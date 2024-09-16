@@ -105,12 +105,12 @@ resource "aws_security_group" "project_main_sg" {
   name   = "Security Groups for private subnet instances"
   vpc_id = aws_vpc.project_vpc.id
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # ingress {
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   ingress {
     from_port   = 22
@@ -166,45 +166,4 @@ resource "null_resource" "run_inventory_script" {
     command = "python3 dynamic_inventory.py"
   }
   depends_on = [aws_instance.project_instance]
-}
-
-#BASTION HOST CONFIGURATION
-
-#Bastion security Group
-resource "aws_security_group" "bastion_sg" {
-  vpc_id = aws_vpc.project_vpc.id
-  name   = "Bastion Security Group"
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["<your-ip>/32"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.project_name}-bastion-sg"
-  }
-}
-
-# Bastion host ec2 instance
-resource "aws_instance" "bastion" {
-  ami           = "ami-04a81a99f5ec58529"
-  instance_type = "t2.micro"
-  key_name      = aws_key_pair.project_ssh_key.key_name
-
-  subnet_id = aws_subnet.public_subnet.id
-
-  vpc_security_group_ids = [aws_security_group.bastion_sg.id]
-
-  tags = {
-    Name = "${var.project_name}-bastion"
-  }
 }

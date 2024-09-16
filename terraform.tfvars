@@ -3,23 +3,18 @@ instances = {
     instance_type = "t2.small"
     ami_id        = "ami-04a81a99f5ec58529"
     tags = {
-      Name = "project-ec2-instance-1"
+      Name = "project-ec2-instance-1",
+      Env = "NPRD"
     }
   },
   instance_two = {
     instance_type = "t2.micro"
     ami_id        = "ami-04a81a99f5ec58529"
     tags = {
-      Name = "project-ec2-instance-2"
+      Name = "project-ec2-instance-2",
+      Env = "PROD"
     }
   },
-  instance_three = {
-    instance_type = "t2.nano"
-    ami_id        = "ami-04a81a99f5ec58529"
-    tags = {
-      Name = "project-ec2-instance-3"
-    }
-  }
 }
 
 vpc_cidr    = "10.10.0.0/16"
